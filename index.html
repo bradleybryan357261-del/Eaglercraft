@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Block World</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Ground blocks
+let geometry = new THREE.BoxGeometry(1,1,1);
+let material = new THREE.MeshBasicMaterial({color: 0x00aa00});
+
+for(let x = -10; x < 10; x++) {
+  for(let z = -10; z < 10; z++) {
+    let cube = new THREE.Mesh(geometry, material);
+    cube.position.set(x, 0, z);
+    scene.add(cube);
+  }
+}
+
+camera.position.y = 2;
+camera.position.z = 5;
+
+let keys = {};
+
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  if(keys["w"]) camera.position.z -= 0.1;
+  if(keys["s"]) camera.position.z += 0.1;
+  if(keys["a"]) camera.position.x -= 0.1;
+  if(keys["d"]) camera.position.x += 0.1;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+</script>
+</body>
+</html>
