@@ -1,18 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>BlockWorld Online</title>
+  <title>BlockWorld Single Player</title>
   <style>
     body { margin:0; overflow:hidden; font-family:sans-serif; }
-    #menu {
-      position:absolute;
-      top:20px;
-      left:20px;
-      background:white;
-      padding:15px;
-      border-radius:10px;
-      z-index:10;
-    }
     #chatBox {
       position:absolute;
       bottom:10px;
@@ -35,12 +26,6 @@
 </head>
 <body>
 
-<div id="menu">
-  <input id="nameInput" placeholder="Your name"><br><br>
-  <input id="roomInput" placeholder="Room name"><br><br>
-  <button onclick="joinRoom()">Join</button>
-</div>
-
 <div id="chatBox">
   <div id="messages"></div>
   <input id="chatInput" placeholder="Type message..." 
@@ -48,7 +33,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
 <script>
 let scene = new THREE.Scene();
@@ -59,7 +43,6 @@ document.body.appendChild(renderer.domElement);
 
 let groundGeo = new THREE.BoxGeometry(1,1,1);
 let groundMat = new THREE.MeshBasicMaterial({color:0x00aa00});
-
 for(let x=-20;x<20;x++){
   for(let z=-20;z<20;z++){
     let cube=new THREE.Mesh(groundGeo,groundMat);
@@ -84,13 +67,10 @@ let keys={};
 document.addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
 document.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
-document.body.addEventListener("click",()=>{
-  document.body.requestPointerLock();
-});
+document.body.addEventListener("click",()=>document.body.requestPointerLock());
 
 let yaw=0;
 let pitch=0;
-
 document.addEventListener("mousemove",e=>{
   if(document.pointerLockElement===document.body){
     yaw-=e.movementX*0.002;
@@ -101,38 +81,16 @@ document.addEventListener("mousemove",e=>{
 
 function animate(){
   requestAnimationFrame(animate);
-
   let speed=0.1;
-  if(keys["w"]){
-    player.position.x-=Math.sin(yaw)*speed;
-    player.position.z-=Math.cos(yaw)*speed;
-  }
-  if(keys["s"]){
-    player.position.x+=Math.sin(yaw)*speed;
-    player.position.z+=Math.cos(yaw)*speed;
-  }
-  if(keys["a"]){
-    player.position.x-=Math.cos(yaw)*speed;
-    player.position.z+=Math.sin(yaw)*speed;
-  }
-  if(keys["d"]){
-    player.position.x+=Math.cos(yaw)*speed;
-    player.position.z-=Math.sin(yaw)*speed;
-  }
-
-  if(keys[" "] && onGround){
-    velocityY=0.2;
-    onGround=false;
-  }
+  if(keys["w"]){ player.position.x-=Math.sin(yaw)*speed; player.position.z-=Math.cos(yaw)*speed; }
+  if(keys["s"]){ player.position.x+=Math.sin(yaw)*speed; player.position.z+=Math.cos(yaw)*speed; }
+  if(keys["a"]){ player.position.x-=Math.cos(yaw)*speed; player.position.z+=Math.sin(yaw)*speed; }
+  if(keys["d"]){ player.position.x+=Math.cos(yaw)*speed; player.position.z-=Math.sin(yaw)*speed; }
+  if(keys[" "] && onGround){ velocityY=0.2; onGround=false; }
 
   velocityY+=gravity;
   player.position.y+=velocityY;
-
-  if(player.position.y<=1){
-    player.position.y=1;
-    velocityY=0;
-    onGround=true;
-  }
+  if(player.position.y<=1){ player.position.y=1; velocityY=0; onGround=true; }
 
   camera.position.copy(player.position);
   camera.position.y+=1;
@@ -140,69 +98,18 @@ function animate(){
   camera.rotation.y=yaw;
   camera.rotation.x=pitch;
 
-  sendPosition();
   renderer.render(scene,camera);
 }
 animate();
-
-/* Multiplayer */
-let peer;
-let connections=[];
-let others={};
-let myName="Player";
-
-function joinRoom(){
-  myName=document.getElementById("nameInput").value||"Player";
-  let room=document.getElementById("roomInput").value;
-  peer=new Peer(room);
-
-  peer.on("connection",conn=>setupConn(conn));
-  peer.on("open",id=>{
-    let conn=peer.connect(room);
-    setupConn(conn);
-    document.getElementById("menu").style.display="none";
-  });
-}
-
-function setupConn(conn){
-  connections.push(conn);
-
-  conn.on("data",data=>{
-    if(data.type==="pos"){
-      if(!others[conn.peer]){
-        let cube=new THREE.Mesh(playerGeo,new THREE.MeshBasicMaterial({color:0x0000ff}));
-        scene.add(cube);
-        others[conn.peer]=cube;
-      }
-      others[conn.peer].position.set(data.x,data.y,data.z);
-    }
-    if(data.type==="chat"){
-      addMessage(data.name+": "+data.msg);
-    }
-  });
-}
-
-function sendPosition(){
-  connections.forEach(c=>{
-    c.send({type:"pos",x:player.position.x,y:player.position.y,z:player.position.z});
-  });
-}
 
 function sendChat(){
   let input=document.getElementById("chatInput");
   let msg=input.value;
   if(!msg) return;
-  addMessage(myName+": "+msg);
-  connections.forEach(c=>{
-    c.send({type:"chat",name:myName,msg:msg});
-  });
-  input.value="";
-}
-
-function addMessage(text){
   let box=document.getElementById("messages");
-  box.innerHTML+=text+"<br>";
+  box.innerHTML+="You: "+msg+"<br>";
   box.scrollTop=box.scrollHeight;
+  input.value="";
 }
 </script>
 </body>
